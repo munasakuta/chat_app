@@ -1,5 +1,7 @@
 import 'package:chat_app/screen/nav.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 
 // firebase
@@ -21,9 +23,27 @@ class _LoginPageState extends State<LoginPage> {
 // 変数
   String email = '';
   String password = '';
+  String imageUrl = '';
+  String userName = '';
   bool hidePassword = true;
   // メッセージ表示用
   String infoText = '';
+
+  // GoogleSignIn
+  Future<void> signInWithGoogle() async {
+    // GoogleSignIn をして得られた情報を Firebase と関連づけることをやっています。
+    final googleUser =
+        await GoogleSignIn(scopes: ['profile', 'email']).signIn();
+
+    final googleAuth = await googleUser?.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    await FirebaseAuth.instance.signInWithCredential(credential);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +68,34 @@ class _LoginPageState extends State<LoginPage> {
                   child: CircularProgressIndicator(),
                 );
               }),
+              TextFormField(
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.mail),
+                  hintText: 'muna',
+                  labelText: 'User Name',
+                ),
+                // TextFormFieldがもつプロパティ
+                // → valueをemail変数に代入してsetState
+                onChanged: (String value) {
+                  setState(() {
+                    userName = value;
+                  });
+                },
+              ),
+              TextFormField(
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.mail),
+                  hintText: 'http://',
+                  labelText: 'Image URL',
+                ),
+                // TextFormFieldがもつプロパティ
+                // → valueをemail変数に代入してsetState
+                onChanged: (String value) {
+                  setState(() {
+                    imageUrl = value;
+                  });
+                },
+              ),
               TextFormField(
                 decoration: const InputDecoration(
                   icon: Icon(Icons.mail),
@@ -100,6 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () async {
                       try {
                         // メール/パスワードでユーザー登録
+                        // displaynameとphotoURLを保存したい → accountpageで独立したdbじゃなくてuserのとこに直接指定する
                         final FirebaseAuth auth = FirebaseAuth.instance;
                         final UserCredential result =
                             await auth.createUserWithEmailAndPassword(
@@ -151,6 +200,23 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     child: Text('Login'),
                   ),
+                  ElevatedButton(
+                      onPressed: () async {
+                        await signInWithGoogle();
+                        // ログインが成功すると FirebaseAuth.instance.currentUserにログイン中のユーザーの情報が入る
+                        print(FirebaseAuth.instance.currentUser?.displayName);
+                        // ログインに成功したら ChatPage に遷移します。
+                        // 前のページに戻らせないようにするにはpushAndRemoveUntilを使います。
+                        if (mounted) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) {
+                              return const NavScreen();
+                            }),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      child: Text('GoogleSignIn')),
                 ],
               ),
             ],

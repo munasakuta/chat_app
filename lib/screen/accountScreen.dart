@@ -1,8 +1,12 @@
-import 'package:chat_app/screen/chatRoom.dart';
-import 'package:flutter/material.dart';
+// import 'package:chat_app/screen/chatRoom.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
-import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:flutter/material.dart';
+import '../post.dart' as post;
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+// import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
+// import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import '../main.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -63,79 +67,55 @@ class _AccountScreenState extends State<AccountScreen> {
                 });
               },
             ),
+            // Expanded(
+            //   child: StreamBuilder<QuerySnapshot<post.UserInfo>>(
+            //     // streamプロパティにsnapshots()を与えると、コレクションの中のドキュメントをリアルタイムで監視することができる
+            //     stream: userInfosReference.orderBy('createdAt').snapshots(),
+            //     // ここで受け取っているsnapshotにstreamで流れてきたデータが入ってくる
+            //     builder: (context, snapshot) {
+            //       // docsにはCollectionに保存されたすべてのドキュメントが入る
+            //       // 取得までには時間がかかるのではじめはnullが入っています
+            //       // nullの場合はから破裂が代入されるようにしている
+            //       final docs = snapshot.data?.docs ?? [];
+            //       return ListView.builder(
+            //         itemCount: docs.length,
+            //         itemBuilder: (context, index) {
+            //           // data()にPostインスタンスが入っている
+            //           // これはwithConverterを使ったことにより得られる恩恵
+            //           // 何もしなければこのデータ型はmapになる
+            //           final userInfo = docs[index].data();
+            //           return Text(userInfo.name);
+            //         },
+            //       );
+            //     },
+            //   ),
+            // ),
             ElevatedButton(
               // ページ遷移
-              onPressed: () async {
-                await FirebaseChatCore.instance.createUserInFirestore(
-                    types.User(
-                        firstName: userName, id: userUid, imageUrl: imageUrl));
+              onPressed: () {
+                //   await FirebaseChatCore.instance.createUserInFirestore(
+                //       types.User(
+                //           firstName: userName, id: userUid, imageUrl: imageUrl));
+                final user = FirebaseAuth.instance.currentUser!;
+                final userId = user.uid;
+                final name = userName;
+                final iconImage = imageUrl;
+                final newDocumentReference = userInfosReference.doc();
+
+                // package:firebase_auth_platform_interface/src/user_info.dart
+                final newUserInfo = post.UserInfo(
+                  name: name,
+                  iconImage: iconImage,
+                  userId: userId,
+                  reference: newDocumentReference,
+                );
+                newDocumentReference.set(newUserInfo);
               },
               child: const Text('登録'),
             ),
           ],
         ),
       )),
-    );
-  }
-}
-
-class UsersPage extends StatelessWidget {
-  const UsersPage({Key? key}) : super(key: key);
-
-  // Create a user with an ID of UID if you don't use `FirebaseChatCore.instance.users()` stream
-  void _handlePressed(types.User otherUser, BuildContext context) async {
-    final room = await FirebaseChatCore.instance.createRoom(otherUser);
-
-    // Navigate to the Chat screen
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ChatRoom()));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder<List<types.User>>(
-        stream: FirebaseChatCore.instance.users(),
-        initialData: const [],
-        builder: (context, snapshot) {
-          return Scaffold();
-        },
-      ),
-    );
-  }
-}
-
-class RoomsPage extends StatelessWidget {
-  const RoomsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder<List<types.Room>>(
-        stream: FirebaseChatCore.instance.rooms(),
-        initialData: const [],
-        builder: (context, snapshot) {
-          return Scaffold();
-        },
-      ),
-    );
-  }
-}
-
-class ChatPage extends StatelessWidget {
-  const ChatPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    var widget;
-    return Scaffold(
-      body: StreamBuilder<List<types.Message>>(
-        initialData: const [],
-        stream: FirebaseChatCore.instance.messages(widget.room),
-        builder: (context, snapshot) {
-          return Scaffold();
-        },
-      ),
     );
   }
 }
