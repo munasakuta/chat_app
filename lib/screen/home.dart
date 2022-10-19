@@ -14,14 +14,14 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final String titleName = 'HOME';
-  late User user;
+  String? userName;
 
   // 状態を管理する変数
   String? userEmail;
   @override
   void initState() {
     userEmail = FirebaseAuth.instance.currentUser?.email!;
-    user = FirebaseAuth.instance.currentUser!;
+    userName = FirebaseAuth.instance.currentUser?.displayName!;
     super.initState();
   }
 
@@ -39,7 +39,7 @@ class _HomeState extends State<Home> {
               currentAccountPicture: CircleAvatar(),
               otherAccountsPictures: [],
               accountEmail: Text('Email : $userEmail'),
-              accountName: Text('User Name : '),
+              accountName: Text('User Name : $userName'),
               decoration: BoxDecoration(
                 color: Colors.blue[300],
               ),
